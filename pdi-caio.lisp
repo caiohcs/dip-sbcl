@@ -1,3 +1,31 @@
+;;; pdi-caio.lisp --- Image processing algorithms
+
+;; Copyright (C) 2020  Caio Henrique Costa Souza
+
+;; Author: Caio Henrique <caio.lief@gmail.com>
+;; URL: https://github.com/caiohcs/dip-sbcl
+;; Version: 0.0.1
+;; Package-Requires: ((sbcl))
+;; Keywords: image
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; For a full copy of the GNU General Public License
+;; see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This package provides a few image processing algorithms
+;; for grey scale images.
+
 (require "uiop")
 
 (defun normalize-min-max-img (img &optional (new-max 1))
@@ -38,6 +66,27 @@
     (loop for i from 0 below n-lines
 	  collect (loop for j from 0 below n-cols
 			collect (aref arr i j)))))
+
+(defun reduce-matrix (arr fun)
+  (let* ((n-lines (array-dimension arr 0))
+	 (n-cols (array-dimension arr 1))
+	 (ret (make-array (list n-lines n-cols))))
+    (reduce fun (loop for i from 0 below n-lines
+		      collect (loop for j from 1 below n-cols
+				    for res = (funcall fun (aref arr i j) (aref arr i (1- j)))
+				      then (funcall fun res (aref arr i j))
+				    finally (return res))))))
+
+(defun map-matrix-with-coordinates (arr fun)
+  "Map over the 2D array arr using calling the function fun on each element."
+  (let* ((n-lines (array-dimension arr 0))
+	 (n-cols (array-dimension arr 1))
+	 (ret (make-array (list n-lines n-cols))))
+    (loop for i from 0 below n-lines
+	  do (loop for j from 0 below n-cols
+		   do (setf (aref ret i j)
+			    (funcall fun (aref arr i j) i j))))
+    ret))
 
 (defun read-file-words (filename)
   "Read a file and return a list formed by its words."
@@ -268,18 +317,45 @@ coord-transf."
 			  (setf (aref res level-i level-j) (1+ (aref res level-i level-j)))))))
     res))
 
+(defun co-occurrence-energy (p-i-j i j)
+  "Returns p-i-j^2"
+  (* p-i-j p-i-j))
+
+(defun co-occurrence-entropy (p-i-j i j)
+  "Returns p-i-j * log(p-i-j)."
+  (if (> p-i-j 0)
+      (* p-i-j (log p-i-j))
+      0))
+
+(defun co-occurrence-variance (p-i-j i j)
+  "Returns p-i-j * log(p-i-j)."
+  (* (expt (- i j) 2) p-i-j))
+
 (defun img-texture (filename coord-transf)
   "Transform the image filename using the transformation function transf T(x)."
   (let* ((file-words (read-file-words
 		      (concatenate 'string filename ".pgm")))
-	 (img-type (first file-words))
 	 (width (parse-integer (second file-words)))
 	 (height (parse-integer (third file-words)))
 	 (max-level (parse-integer (fourth file-words)))
 	 (pixels-list (mapcar #'parse-integer (nthcdr 4 file-words)))
 	 (pixels-arr (list-to-matrix (split pixels-list height width)))
-	 (texture (img--co-occurrence pixels-arr max-level coord-transf)))
-    texture))
+	 (texture (img--co-occurrence pixels-arr max-level coord-transf))
+	 (sum-texture (reduce-matrix texture #'+))
+	 (norm-texture (map-matrix texture (lambda (x) (/ x sum-texture))))
+	 (entropy (reduce-matrix (map-matrix-with-coordinates norm-texture
+							      #'co-occurrence-entropy)
+				 #'+))
+	 (energy (reduce-matrix (map-matrix-with-coordinates norm-texture
+							     #'co-occurrence-energy)
+				#'+))
+	 (variance (reduce-matrix (map-matrix-with-coordinates norm-texture
+							       #'co-occurrence-variance)
+				  #'+)))
+    (list
+     :entropy entropy
+     :energy (* 1.0 energy)
+     :variance (* 1.0 variance))))
 
 ;; (img-transform "img/screws" "-equal.pgm" (img-transf-hist-equal "img/screws"))
 ;; (img-transform "img/pepper" "-neg.pgm" (img-transf-negative 255))
@@ -287,7 +363,7 @@ coord-transf."
 ;; (img-transform "img/mountain" "-contrast.pgm" (img-transf-contrast-stretching 255 0.6 0 0.6 1))
 ;; (img-transform "img/mona" "-log.pgm" (img-transf-log 255))
 
-(img-transform-mask "img/monalisa-max" ".pgm" #'max 3 3)
+;; (img-transform-mask "img/monalisa-max" ".pgm" #'max 3 3)
 ;; (img-transform-mask "img/pepper" "-mean.pgm" (img-define-mask '(-1 -1 -1
 ;; 								  -1 8 -1
 ;; 								  -1 -1 -1))
@@ -295,5 +371,5 @@ coord-transf."
 ;; (img-transform-mask "img/monalisa" "-gaussian.pgm"
 ;; 		    (img-define-mask (img--gaussian-filter 1.3 5 5)) 5 5)
 
-;; (img-texture "img/monalisa" (lambda (i j)
+;; (img-texture "img/mountain" (lambda (i j)
 ;; 			      (list (1+ i) (1+ j))))
