@@ -1,81 +1,40 @@
-;;; pdi-caio.lisp --- Image processing algorithms
+- [How to use](#orgf8157e1)
+- [Histogram equalization](#org6965a93)
+- [Intensity transformations](#orgd074d7b)
+- [Spatial filters](#orgde35e9b)
+- [Textures](#orgdf6ac5a)
+- [Image mapping functions](#org66f6eda)
+- [Auxiliary functions](#org0847ebd)
 
-;; Copyright (C) 2020  Caio Henrique Costa Souza
 
-;; Author: Caio Henrique <caio.lief@gmail.com>
-;; URL: https://github.com/caiohcs/dip-sbcl
-;; Version: 0.0.1
-;; Package-Requires: ((sbcl))
-;; Keywords: image
+<a id="orgf8157e1"></a>
 
-;; This file is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
+# How to use
 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+```lisp
+(img-transform "img/screws" "-equal.pgm" (img-transf-hist-equal "img/screws"))
+(img-transform "img/pepper" "-neg.pgm" (img-transf-negative 255))
+(img-transform "img/relogio" "-gamma.pgm" (img-transf-gamma 255 0.3))
+(img-transform "img/mountain" "-contrast.pgm" (img-transf-contrast-stretching 255 0.6 0 0.6 1))
+(img-transform "img/mona" "-log.pgm" (img-transf-log 255))
+(img-transform-mask "img/monalisa" "-median.pgm" #'median 3 3)
+(img-transform-mask "img/pepper" "-high-pass.pgm" (img-define-mask '(-1 -1 -1
+								     -1 8 -1
+								     -1 -1 -1))
+		    3 3 t)
+(img-transform-mask "img/monalisa" "-gaussian.pgm"
+		    (img-define-mask (img--gaussian-filter 1.3 5 5)) 5 5)
 
-;; For a full copy of the GNU General Public License
-;; see <https://www.gnu.org/licenses/>.
+(img-texture "img/mountain" (lambda (i j)
+			      (list (1+ i) (1+ j))))
+```
 
-;;; Commentary:
 
-;; This package provides a few image processing algorithms
-;; for grey scale images.
+<a id="org6965a93"></a>
 
-(require "uiop")
+# Histogram equalization
 
-;;; Image mapping functions
-
-(defun img-transform (filename output-extension transf)
-  "Transform the image filename using the transformation function transf T(x)."
-  (let* ((file-words (read-file-words
-		      (concatenate 'string filename ".pgm")))
-	 (img-type (first file-words))
-	 (width (parse-integer (second file-words)))
-	 (height (parse-integer (third file-words)))
-	 (max-level (parse-integer (fourth file-words)))
-	 (pixels-list (mapcar #'parse-integer (nthcdr 4 file-words)))
-	 (pixels-arr (list-to-matrix (split pixels-list width height)))
-	 (img-transf (matrix-to-list (map-matrix pixels-arr transf))))
-
-    (with-open-file (out (concatenate 'string filename output-extension)
-			 :direction :output
-			 :if-exists :supersede)
-      (format out "~a~%~a ~a~%~a~%~{~{~a ~}~%~}"
-	      img-type width height max-level img-transf))))
-
-(defun img-transform-mask (filename output-extension transf p q &optional normalize-p)
-  "Transform the image filename using the transformation function transf T(x)."
-  (let* ((file-words (read-file-words
-		      (concatenate 'string filename ".pgm")))
-	 (img-type (first file-words))
-	 (width (parse-integer (second file-words)))
-	 (height (parse-integer (third file-words)))
-	 (max-level (parse-integer (fourth file-words)))
-	 (pixels-list (mapcar #'parse-integer (nthcdr 4 file-words)))
-	 (pixels-arr (list-to-matrix (split pixels-list height width)))
-	 (img-transf (img-apply-mask pixels-arr
-				     p q
-				     (1- height) (1- width)
-				     (lambda (&rest img)
-				       ;; TODO: remove this from here and round on mean func
-				       (ceiling (apply transf img)))))
-	 (img-result (if normalize-p
-			 (normalize-min-max-img img-transf max-level)
-			 img-transf)))
-
-    (with-open-file (out (concatenate 'string filename output-extension)
-			 :direction :output
-			 :if-exists :supersede)
-      (format out "~a~%~a ~a~%~a~%~{~{~a ~}~%~}"
-	      img-type width height max-level img-result))))
-
-;;; Histogram functions
-
+```lisp
 (defun write-histogram-to-file (filename extension hist)
   "Write the histogram values as a single column to a file."
   (with-open-file (out (concatenate 'string filename extension)
@@ -127,9 +86,14 @@ elements."
 
     (lambda (x)
       (second (assoc x hist-old-new-alist)))))
+```
 
-;;; Intensity transformation functions
 
+<a id="orgd074d7b"></a>
+
+# Intensity transformations
+
+```lisp
 (defun img-transf-negative (max-level)
   "Return a transformation T(X) = max-level - X."
   (lambda (x) (- max-level x)))
@@ -161,9 +125,14 @@ elements."
 				 (let* ((delta (/ (- 1 d) (- 1 c)))
 					(k (- 1 delta)))
 				   (+ k (* delta x)))))))))
+```
 
-;;; Spatial filters
 
+<a id="orgde35e9b"></a>
+
+# Spatial filters
+
+```lisp
 (defun mean (&rest numbers)
   "Returns the mean of numbers."
   (/ (apply #'+ numbers)
@@ -210,9 +179,14 @@ mask-coenfs."
 			 (* x y))
 		       mask-coefs
 		       image))))
+```
 
-;;; Textures
 
+<a id="orgdf6ac5a"></a>
+
+# Textures
+
+```lisp
 (defun co-occurrence-energy (p-i-j i j)
   "Returns p-i-j^2"
   (* p-i-j p-i-j))
@@ -252,9 +226,65 @@ mask-coenfs."
      :entropy entropy
      :energy (* 1.0 energy)
      :variance (* 1.0 variance))))
+```
 
-;;; Auxiliary functions 
 
+<a id="org66f6eda"></a>
+
+# Image mapping functions
+
+```lisp
+(defun img-transform (filename output-extension transf)
+  "Transform the image filename using the transformation function transf T(x)."
+  (let* ((file-words (read-file-words
+		      (concatenate 'string filename ".pgm")))
+	 (img-type (first file-words))
+	 (width (parse-integer (second file-words)))
+	 (height (parse-integer (third file-words)))
+	 (max-level (parse-integer (fourth file-words)))
+	 (pixels-list (mapcar #'parse-integer (nthcdr 4 file-words)))
+	 (pixels-arr (list-to-matrix (split pixels-list width height)))
+	 (img-transf (matrix-to-list (map-matrix pixels-arr transf))))
+
+    (with-open-file (out (concatenate 'string filename output-extension)
+			 :direction :output
+			 :if-exists :supersede)
+      (format out "~a~%~a ~a~%~a~%~{~{~a ~}~%~}"
+	      img-type width height max-level img-transf))))
+
+(defun img-transform-mask (filename output-extension transf p q &optional normalize-p)
+  "Transform the image filename using the transformation function transf T(x)."
+  (let* ((file-words (read-file-words
+		      (concatenate 'string filename ".pgm")))
+	 (img-type (first file-words))
+	 (width (parse-integer (second file-words)))
+	 (height (parse-integer (third file-words)))
+	 (max-level (parse-integer (fourth file-words)))
+	 (pixels-list (mapcar #'parse-integer (nthcdr 4 file-words)))
+	 (pixels-arr (list-to-matrix (split pixels-list height width)))
+	 (img-transf (img-apply-mask pixels-arr
+				     p q
+				     (1- height) (1- width)
+				     (lambda (&rest img)
+				       ;; TODO: remove this from here and round on mean func
+				       (ceiling (apply transf img)))))
+	 (img-result (if normalize-p
+			 (normalize-min-max-img img-transf max-level)
+			 img-transf)))
+
+    (with-open-file (out (concatenate 'string filename output-extension)
+			 :direction :output
+			 :if-exists :supersede)
+      (format out "~a~%~a ~a~%~a~%~{~{~a ~}~%~}"
+	      img-type width height max-level img-result))))
+```
+
+
+<a id="org0847ebd"></a>
+
+# Auxiliary functions
+
+```lisp
 (defun normalize-min-max-img (img &optional (new-max 1))
   "Normalizes a list of numbers between 0 and 1, i.e. it applies min-max."
   (let ((min-val (loop for line in img
@@ -377,21 +407,4 @@ of the image."
 		      collect
 		      (apply transformation
 			     (img--matrix-around-point img i j p q m n)))))
-
-;;; Examples
-
-;; (img-transform "img/screws" "-equal.pgm" (img-transf-hist-equal "img/screws"))
-;; (img-transform "img/pepper" "-neg.pgm" (img-transf-negative 255))
-;; (img-transform "img/relogio" "-gamma.pgm" (img-transf-gamma 255 0.3))
-;; (img-transform "img/mountain" "-contrast.pgm" (img-transf-contrast-stretching 255 0.6 0 0.6 1))
-;; (img-transform "img/mona" "-log.pgm" (img-transf-log 255))
-;; (img-transform-mask "img/monalisa" "-median.pgm" #'median 3 3)
-;; (img-transform-mask "img/pepper" "-high-pass.pgm" (img-define-mask '(-1 -1 -1
-;; 								     -1 8 -1
-;; 								     -1 -1 -1))
-;; 		    3 3 t)
-;; (img-transform-mask "img/monalisa" "-gaussian.pgm"
-;; 		    (img-define-mask (img--gaussian-filter 1.3 5 5)) 5 5)
-
-;; (img-texture "img/mountain" (lambda (i j)
-;; 			      (list (1+ i) (1+ j))))
+```
