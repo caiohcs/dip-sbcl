@@ -1,13 +1,14 @@
-- [How to use](#orgf8157e1)
-- [Histogram equalization](#org6965a93)
-- [Intensity transformations](#orgd074d7b)
-- [Spatial filters](#orgde35e9b)
-- [Textures](#orgdf6ac5a)
-- [Image mapping functions](#org66f6eda)
-- [Auxiliary functions](#org0847ebd)
+- [How to use](#orge77cabb)
+- [Real example](#org9d0b65a)
+- [Histogram equalization](#orgdf7b2a4)
+- [Intensity transformations](#orgd80e46d)
+- [Spatial filters](#org29c5aed)
+- [Textures](#org3141087)
+- [Image mapping functions](#org2ef0c6b)
+- [Auxiliary functions](#org78db174)
 
 
-<a id="orgf8157e1"></a>
+<a id="orge77cabb"></a>
 
 # How to use
 
@@ -30,7 +31,52 @@
 ```
 
 
-<a id="org6965a93"></a>
+<a id="org9d0b65a"></a>
+
+# Real example
+
+This is an image with gaussian and salt and pepper noise:
+
+![img](./img/noise.png)
+
+This is the result after applying the median, mean and gaussian filters, then using a high-pass filter to detect edges and adding it with an weight of 0.25 to the result of the previous low pass filters and finally applying one last median filter.
+
+![img](./img/noise_after.png)
+
+```lisp
+(img-transform-mask "img/noise" "2.pgm" #'median 3 3)
+(img-transform-mask "img/noise2" "3.pgm" #'mean 3 3)
+(img-transform-mask "img/noise23" "5.pgm"
+		    (img-define-mask (img--gaussian-filter 1 5 5)) 5 5)
+;; Edge detection with high pass filter:
+(img-transform-mask "img/noise23" "4.pgm" (img-define-mask '(-1 -1 -1
+							     -1 8 -1
+							     -1 -1 -1))
+		    3 3 t)
+;; This is a lisp hacky way (I'll improve it later ...) to add the high pass filter
+;; with an weight of 0.25 to the result of the previous low pass filters:
+(img-transform "img/noise235"
+	       "6.pgm"
+	       (let* ((i -1)
+		      (k 0.75)
+		      (file-words (read-file-words
+				   (concatenate 'string "img/noise234" ".pgm")))
+		      (img-type (first file-words))
+		      (width (parse-integer (second file-words)))
+		      (height (parse-integer (third file-words)))
+		      (max-level (parse-integer (fourth file-words)))
+		      (pixels-arr (list-to-matrix (list
+						   (mapcar #'parse-integer
+							   (nthcdr 4 file-words))))))
+		 (lambda (x)
+		   (setf i (1+ i))
+		   (round (+ (* k x)
+			     (* (- 1 k) (aref pixels-arr 0 i)))))))
+(img-transform-mask "img/noise2356" "7.pgm" #'median 5 5)
+```
+
+
+<a id="orgdf7b2a4"></a>
 
 # Histogram equalization
 
@@ -89,7 +135,7 @@ elements."
 ```
 
 
-<a id="orgd074d7b"></a>
+<a id="orgd80e46d"></a>
 
 # Intensity transformations
 
@@ -128,7 +174,7 @@ elements."
 ```
 
 
-<a id="orgde35e9b"></a>
+<a id="org29c5aed"></a>
 
 # Spatial filters
 
@@ -182,7 +228,7 @@ mask-coenfs."
 ```
 
 
-<a id="orgdf6ac5a"></a>
+<a id="org3141087"></a>
 
 # Textures
 
@@ -229,7 +275,7 @@ mask-coenfs."
 ```
 
 
-<a id="org66f6eda"></a>
+<a id="org2ef0c6b"></a>
 
 # Image mapping functions
 
@@ -280,7 +326,7 @@ mask-coenfs."
 ```
 
 
-<a id="org0847ebd"></a>
+<a id="org78db174"></a>
 
 # Auxiliary functions
 
