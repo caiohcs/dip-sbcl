@@ -1,0 +1,9 @@
+* Image processing algorithms
+
+- Histogram equalization: [[./image-histogram.lisp]]
+- Intensity transformations: [[./image-transformations.lisp]]
+- Spatial filters: [[./image-spatial-filters.lisp]]
+- Textures: [[./image-textures.lisp]]
+- Frequency filters: [[./image-frequency-filters.lisp]]
+- Other functions: [[./image-processing.lisp]]
+- Examples: [[./image-examples.lisp]]

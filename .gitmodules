@@ -1,0 +1,3 @@
+[submodule "fftw_bindings"]
+	path = fftw_bindings
+	url = https://github.com/smithzvk/fftw-bindings
