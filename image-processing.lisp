@@ -4,6 +4,7 @@
 (load "image-histogram.lisp")
 (load "image-spatial-filters.lisp")
 (load "image-textures.lisp")
+(load "image-transformations.lisp")
 
 (in-package :image-processing)
 
@@ -282,3 +283,82 @@ a matrix p by q around (x,y)."
   "Returns an image object created from filename."
   (let ((file-words (read-file-words (concatenate 'string filename ".pgm"))))
     (img-raw-pgm-to-image file-words)))
+
+;;;; The code below sucks, I'll rewrite it later..
+;;; TODO: remove duplicated code between raw-pgm and raw-ppm
+(defun img-raw-ppm-to-image (img-raw-ppm)
+  "Returns an instance of the class image created using img-raw-ppm."
+  (let* ((img-type (first img-raw-ppm))
+	 (width (parse-integer (second img-raw-ppm)))
+	 (height (parse-integer (third img-raw-ppm)))
+	 (max-level (parse-integer (fourth img-raw-ppm)))
+	 (raw-values (nthcdr 4 img-raw-ppm))
+	 (pixels (make-array height)))
+    (loop for i from 0 below height do (setf (svref pixels i) (make-array width)))
+
+    (loop for i from 0 below height
+	  do (loop for j from 0 below width
+		   do (setf (svref (svref pixels i) j)
+			    (make-instance 'pixel
+					   :value (loop for i from 0 below 3
+							collect (parse-integer
+								 (pop raw-values)))))))
+
+    (make-instance 'image :type img-type
+			  :width width
+			  :height height
+			  :max-intensity-level max-level
+			  :pixels pixels)))
+
+;;; TODO: remove duplicated code between image-transform and image-transform ppm
+(defun img-transform-ppm (filename output-extension transf &key mask-dimensions)
+  "Transform the image filename using the transformation function transf T(x)."
+  (let* ((file-words (read-file-words
+		      (concatenate 'string filename ".ppm")))
+	 (image (img-raw-ppm-to-image file-words)))
+    (with-slots (height width) image
+      (cond (mask-dimensions
+	     (map-image transf image :map-a-copyp t
+				     :reader (lambda (pixels i j)
+					       (matrix-values-around-point pixels height width i j
+									   (first mask-dimensions)
+									   (second mask-dimensions)))))
+	    (t
+	     (map-image-ppm transf image))))
+    (img-save-ppm image (concatenate 'string filename output-extension))))
+
+;;; TODO: remove duplicated code between map-image-ppm and map-image
+(defun map-image-ppm (function image &key reader map-a-copyp)
+  (with-slots (pixels) image
+    (map-matrix #'pixel-value pixels)
+    (let* ((pixels-red (map 'vector (lambda (line) (map 'vector #'first line)) pixels))
+	   (pixels-green (map 'vector (lambda (line) (map 'vector #'second line)) pixels))
+	   (pixels-blue (map 'vector (lambda (line) (map 'vector #'third line)) pixels))
+	   (pixels-rgb (list pixels-red pixels-green pixels-blue)))
+      (loop for pixels-list in pixels-rgb
+	    do (if reader
+		   (map-matrix function pixels-list :reader reader :map-a-copyp map-a-copyp)
+		   (map-matrix function pixels-list :map-a-copyp map-a-copyp)))
+      (setq pixels (map 'vector (lambda (r-line g-line b-line)
+				  (map 'vector
+				       (lambda (r g b)
+					 (make-instance 'pixel :value (list r g b)))
+				       r-line g-line b-line))
+			pixels-red pixels-green pixels-blue)))
+    image))
+
+;;; TODO: remove duplicated code between img-save and img-save-ppm
+(defun img-save-ppm (image filename)
+  (with-slots (pixels width height max-intensity-level type) image
+    (map-matrix #'pixel-value pixels)
+    (with-open-file (out filename
+			 :direction :output
+			 :if-exists :supersede)
+      (format out "~a~%~a ~a~%~a"
+	      type width height max-intensity-level)
+      (loop for i from 0 below (slot-value image 'height)
+	    do (format out "~%")
+	       (loop for j from 0 below (slot-value image 'width)
+		     do (format out "~a ~a ~a " (first (svref (svref pixels i) j))
+				(second (svref (svref pixels i) j))
+				(third (svref (svref pixels i) j))))))))
