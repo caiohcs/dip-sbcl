@@ -1,4 +1,4 @@
-(in-package :spatial-filters)
+(in-package :image-processing)
 
 (defun round-transformation (function)
   (lambda (&rest args)

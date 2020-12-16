@@ -1,4 +1,4 @@
-(in-package :frequency-filters)
+(in-package :image-processing)
 
 ;;; Low pass filters 
 (defmacro deflowpass (low-pass-name args docstring &rest body)

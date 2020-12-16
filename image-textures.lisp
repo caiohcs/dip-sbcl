@@ -1,4 +1,4 @@
-(in-package :textures)
+(in-package :image-processing)
 
 (defun co-occurrence-energy (p-i-j &optional i j)
   "Returns p-i-j^2"

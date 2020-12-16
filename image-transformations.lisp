@@ -1,4 +1,4 @@
-(in-package :transformations)
+(in-package :image-processing)
 
 (defun negative (max-level)
   "Return a transformation T(X) = max-level - X."

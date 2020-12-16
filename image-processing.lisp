@@ -2,9 +2,8 @@
 (load "packages.lisp")
 (load "image-frequency-filters.lisp")
 (load "image-histogram.lisp")
-(load "image-textures.lisp")
-(load "image-transformations.lisp")
 (load "image-spatial-filters.lisp")
+(load "image-textures.lisp")
 
 (in-package :image-processing)
 

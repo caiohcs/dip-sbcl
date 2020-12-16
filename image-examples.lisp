@@ -1,4 +1,5 @@
 ;;;; Examples
+(in-package :image-processing)
 
 ;;; TODO - broken - to fix
 (img-transform "img/pepper" "-high-pass.pgm" (define-mask '(-1 -1 -1
@@ -25,9 +26,9 @@
 (img-texture "img/brain" (lambda (x y) (list (1+ x) (1+ y))))
 
 ;;; Frequency transformations
-(img-frequency-transform "img/pepper" "-fft.pgm" (filter-high-pass-ideal 10))
-(img-frequency-transform "img/pepper" "-fft.pgm" (filter-high-pass-butterworth 10 1))
-(img-frequency-transform "img/pepper" "-fft.pgm" (filter-high-pass-gaussian 10))
-(img-frequency-transform "img/pepper" "-fft.pgm" (filter-low-pass-butterworth 10 1))
-(img-frequency-transform "img/pepper" "-fft.pgm" (filter-low-pass-ideal 10))
-(img-frequency-transform "img/pepper" "-fft.pgm" (filter-low-pass-gaussian 10))
+(img-frequency-transform "img/pepper" "-high-pass-ideal.pgm" (filter-high-pass-ideal 10))
+(img-frequency-transform "img/pepper" "-high-pass-butterworth.pgm" (filter-high-pass-butterworth 10 1))
+(img-frequency-transform "img/pepper" "-high-pass-gaussian.pgm" (filter-high-pass-gaussian 10))
+(img-frequency-transform "img/pepper" "-low-pass-butterworth.pgm" (filter-low-pass-butterworth 10 1))
+(img-frequency-transform "img/pepper" "-low-pass-ideal.pgm" (filter-low-pass-ideal 10))
+(img-frequency-transform "img/pepper" "-low-pass-gaussian.pgm" (filter-low-pass-gaussian 10))
