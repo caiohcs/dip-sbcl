@@ -9,39 +9,48 @@
 - Examples: [[./image-examples.lisp]]
 
 * Examples
+Original:
+#+ATTR_HTML: :width 100%
+[[./img/pepper.png]]
 
 #+BEGIN_SRC common-lisp
-  (img-frequency-transform "img/pepper" "-high-pass-ideal.pgm" (filter-high-pass-ideal 10))
+  (img-frequency-transform "img/pepper" "-high-pass-ideal.pgm"
+                           (filter-high-pass-ideal 10))
 #+END_SRC
 #+ATTR_HTML: :width 100%
 [[./img/examples/pepper-high-pass-ideal.png]]
 
 #+BEGIN_SRC common-lisp
-  (img-frequency-transform "img/pepper" "-high-pass-butterworth.pgm" (filter-high-pass-butterworth 10 1))
+  (img-frequency-transform "img/pepper" "-high-pass-butterworth.pgm"
+                           (filter-high-pass-butterworth 10 1))
 #+END_SRC
 #+ATTR_HTML: :width 100%
 [[./img/examples/pepper-high-pass-butterworth.png]]
 
 #+BEGIN_SRC common-lisp
-  (img-frequency-transform "img/pepper" "-high-pass-gaussian.pgm" (filter-high-pass-gaussian 10))
+  (img-frequency-transform "img/pepper" "-high-pass-gaussian.pgm"
+                           (filter-high-pass-gaussian 10))
 #+END_SRC
 #+ATTR_HTML: :width 100%
 [[./img/examples/pepper-high-pass-gaussian.png]]
 
 #+BEGIN_SRC common-lisp
-  (img-frequency-transform "img/pepper" "-low-pass-butterworth.pgm" (filter-low-pass-butterworth 10 1))
+  (img-frequency-transform "img/pepper" "-low-pass-butterworth.pgm"
+                           (filter-low-pass-butterworth 10 1))
 #+END_SRC
 #+ATTR_HTML: :width 100%
 [[./img/examples/pepper-low-pass-butterworth.png]]
 
 #+BEGIN_SRC common-lisp
-  (img-frequency-transform "img/pepper" "-low-pass-ideal.pgm" (filter-low-pass-ideal 10))
+  (img-frequency-transform "img/pepper" "-low-pass-ideal.pgm"
+                           (filter-low-pass-ideal 10))
 #+END_SRC
 #+ATTR_HTML: :width 100%
 [[./img/examples/pepper-low-pass-ideal.png]]
 
 #+BEGIN_SRC common-lisp
-  (img-frequency-transform "img/pepper" "-low-pass-gaussian.pgm" (filter-low-pass-gaussian 10))
+  (img-frequency-transform "img/pepper" "-low-pass-gaussian.pgm"
+                           (filter-low-pass-gaussian 10))
 #+END_SRC
 #+ATTR_HTML: :width 100%
 [[./img/examples/pepper-low-pass-gaussian.png]]
