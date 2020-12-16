@@ -58,30 +58,31 @@ Original image:
 
 ** Color image
 Original image:
+#+ATTR_HTML: :width 70%
 [[./img/examples/lena.png]]
 
 #+BEGIN_SRC common-lisp
   (img-transform-ppm "img/lena" "-neg.pgm"
                      (negative 255))
 #+END_SRC
-#+ATTR_HTML: :width 100%
+#+ATTR_HTML: :width 70%
 [[./img/examples/lena-neg.png]]
 
 #+BEGIN_SRC common-lisp
   (img-transform-ppm "img/lena" "-contrast.ppm"
                      (contrast-stretching 255 0.34 0 0.34 1))
 #+END_SRC
-#+ATTR_HTML: :width 100%
+#+ATTR_HTML: :width 70%
 [[./img/examples/lena-contrast.png]]
 
 #+BEGIN_SRC common-lisp
   (img-transform-ppm "img/lena" "-gamma.ppm" (gamma 255 0.3))
 #+END_SRC
-#+ATTR_HTML: :width 100%
+#+ATTR_HTML: :width 70%
 [[./img/examples/lena-gamma.png]]
 
 #+BEGIN_SRC common-lisp
   (img-transform-ppm "img/lena" "-log.pgm" (logarithm 255))
 #+END_SRC
-#+ATTR_HTML: :width 100%
+#+ATTR_HTML: :width 70%
 [[./img/examples/lena-log.png]]
