@@ -9,9 +9,10 @@
 - Examples: [[./image-examples.lisp]]
 
 * Examples
-Original:
+** Frequency filters
+Original image:
 #+ATTR_HTML: :width 100%
-[[./img/pepper.png]]
+[[./img/examples/pepper.png]]
 
 #+BEGIN_SRC common-lisp
   (img-frequency-transform "img/pepper" "-high-pass-ideal.pgm"
