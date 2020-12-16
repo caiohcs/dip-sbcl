@@ -57,6 +57,9 @@ Original image:
 [[./img/examples/pepper-low-pass-gaussian.png]]
 
 ** Color image
+Original image:
+[[./img/examples/lena.png]]
+
 #+BEGIN_SRC common-lisp
   (img-transform-ppm "img/lena" "-neg.pgm"
                      (negative 255))
